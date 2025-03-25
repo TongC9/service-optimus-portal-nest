@@ -1,11 +1,24 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+import { Connection } from 'mongoose';
 import { MongoConfiguration } from 'src/config/mongo.config';
 import { MongoService } from './mongo.service';
 import { MasterCustomersRepository } from './repositories/mastercustomers/mastercustomers.repository';
 import { OptimusJobListsRepository } from './repositories/optimusjoblists/optimusjoblists.repository';
+
+
+import { OptimusJobList_2sRepository } from '../../database/mongo/repositories/optimusjoblist_2s/optimusjoblist_2s.repository';
+import { OptimusJobList_2s, OptimusJobList_2sSchema } from '../../database/mongo/schema/optimusjoblist_2s.schema';
+
 import { OptimusOmniOrdersRepository } from './repositories/optimusomniorders/optimusomniorders.repository';
 import { OptimusOrdersRepository } from './repositories/optimusorders/optimusorders.repository';
+
+import { OptimusOrder_2sRepository } from '../../database/mongo/repositories/optimusorder_2s/optimusorder_2s.repository';
+import { OptimusOrder_2sSchema, encryptOptimusOrder_2sSchema } from '../../database/mongo/schema/optimusorder_2s.schema';
+
+import { OptimusRepairJob_2sRepository } from '../../database/mongo/repositories/optimusrepairjob_2s/optimusrepairjob_2s.repository';
+import { OptimusRepairJobList_2s, OptimusRepairJob_2sSchema } from '../../database/mongo/schema/optimusrepairjob_2s.schema';
+
 import { PoHeadersRepository } from './repositories/po_headers/po_headers.respository';
 import { PoJobsRepository } from './repositories/po_jobs/po_jobs.respository';
 import { SaleOrderItemsRepository } from './repositories/saleorderitems/saleorderitems.repository';
@@ -54,8 +67,15 @@ import {
   imports: [
     MongooseModule.forRootAsync({
       inject: [MongoConfiguration],
-      useFactory: async (mongoConfig: MongoConfiguration) => ({
+      useFactory: async (mongoConfig: MongoConfiguration) => ({ 
         uri: mongoConfig.mongoURI,
+        onConnectionCreate: (connection: Connection) => {
+            connection.on('connected', () => {
+              console.log('connected',connection);
+              console.log('env',`.env.${process.env.NODE_ENV}`);
+            });
+          return connection;
+        },
       }),
     }),
     MongooseModule.forFeatureAsync([
@@ -64,6 +84,20 @@ import {
         useFactory: async (mongoConfig: MongoConfiguration) => {
           encryptOptimusJobListsSchema(mongoConfig);
           return OptimusJobListsSchema;
+        },
+        inject: [MongoConfiguration],
+      },
+      {
+        name: OptimusJobList_2s.name,
+        useFactory: async () => { 
+          return OptimusJobList_2sSchema;
+        },
+        inject: [MongoConfiguration],
+      },
+      {
+        name: OptimusRepairJobList_2s.name,
+        useFactory: async () => { 
+          return OptimusRepairJob_2sSchema;
         },
         inject: [MongoConfiguration],
       },
@@ -144,6 +178,14 @@ import {
         useFactory: async (mongoConfig: MongoConfiguration) => {
           encryptOptimusOrdersSchema(mongoConfig);
           return OptimusOrdersSchema;
+        },
+        inject: [MongoConfiguration],
+      },
+     {
+        name: 'OptimusOrder_2s',
+        useFactory: async (mongoConfig: MongoConfiguration) => {
+            encryptOptimusOrder_2sSchema(mongoConfig);
+          return OptimusOrder_2sSchema;
         },
         inject: [MongoConfiguration],
       },
@@ -244,12 +286,22 @@ import {
     PoHeadersRepository,
     PoJobsRepository,
     OptimusJobListsRepository,
+    OptimusJobList_2sRepository,
+    
+    
     SaleOrderItemsRepository,
     SaleOrderJobListsRepository,
     OptimusOrdersRepository,
+    OptimusOrder_2sRepository,
+
+
     MasterCustomersRepository,
     OptimusOmniOrdersRepository,
   ],
   exports: [MongooseModule, MongoService, OptimusJobListsRepository, PoHeadersRepository, PoJobsRepository],
 })
-export class MongoModule {}
+export class MongoModule {
+   constructor(){
+    // console.log('env config host module',`.env.${process.env.NODE_ENV}`);
+  }
+}

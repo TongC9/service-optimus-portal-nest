@@ -26,5 +26,5 @@ export class OptimusUserRoles {
   
 export const OptimusUserRolesSchema = SchemaFactory.createForClass(OptimusUserRoles);
 
-OptimusUserRolesSchema.index({ userName: 1 });
+// OptimusUserRolesSchema.index({ userName: 1 });
 
